@@ -50,9 +50,9 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n========================================`);
   console.log(`  网站已启动！`);
-  console.log(`  访问地址: http://localhost:${PORT}`);
+  console.log(`  本地访问: http://localhost:${PORT}`);
   console.log(`========================================\n`);
 });
