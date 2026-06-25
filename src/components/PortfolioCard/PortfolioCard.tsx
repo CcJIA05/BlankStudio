@@ -1,8 +1,7 @@
-import { ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Project } from '@/data/projects';
 import { categoryNames } from '@/data/projects';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface PortfolioCardProps {
   project: Project;

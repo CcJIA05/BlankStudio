@@ -1,5 +1,5 @@
 import { useState, useEffect, CSSProperties } from 'react';
-import { loadLogoWithTransparentBackground } from '../utils/logoUtils';
+import { loadLogoWithTransparentBackground } from '@/utils/logoUtils';
 
 interface LogoImageProps {
   src: string;
@@ -14,7 +14,7 @@ export default function LogoImage({ src, alt, className, style }: LogoImageProps
   useEffect(() => {
     let mounted = true;
     loadLogoWithTransparentBackground(src)
-      .then(result => {
+      .then((result: string) => {
         if (mounted) {
           setProcessedSrc(result);
         }

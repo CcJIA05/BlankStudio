@@ -27,13 +27,6 @@ export default function Hero() {
     return () => observer.disconnect();
   }, []);
 
-  const scrollToWork = () => {
-    const workSection = document.getElementById('work');
-    if (workSection) {
-      workSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <section
       ref={heroRef}
