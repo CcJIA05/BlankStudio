@@ -395,14 +395,56 @@
 
     @media (max-width: 768px) {
       .cursor-ring, .cursor-dot { display: none; }
-      .beam { right: 20%; }
-      .beam-glow { right: 10%; }
-      /* 确保移动端动画正常工作 */
+      .beam { right: 20%; opacity: 0.6; }
+      .beam-glow { right: 10%; opacity: 0.4; }
+      
+      /* 动画效果和电脑端完全一致 */
       .reveal, .reveal-left, .reveal-right {
-        transition-duration: 0.8s;
+        transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 0;
       }
+      .reveal { transform: translateY(30px); }
+      .reveal-left { transform: translateX(-40px); }
+      .reveal-right { transform: translateX(40px); }
+      .reveal.is-visible, .reveal-left.is-visible, .reveal-right.is-visible {
+        opacity: 1;
+        transform: translateY(0) translateX(0);
+      }
+      
       .glow-orb {
-        animation: pulse 4s ease-in-out infinite;
+        animation: pulse 5s ease-in-out infinite;
+        opacity: 0.5;
+      }
+      
+      /* 布局比例调整 */
+      .relative.mb-4.md\:mb-6.ml-0.md\:-ml-6 {
+        margin-left: 0;
+      }
+      
+      /* 导航栏紧凑 */
+      nav {
+        padding-top: 16px;
+        padding-bottom: 16px;
+      }
+      
+      /* 作品卡片间距 */
+      .md\:mt-16 {
+        margin-top: 24px;
+      }
+      
+      /* 标题大小 */
+      .text-4xl, .text-5xl, .text-6xl {
+        font-size: 32px;
+        line-height: 1.2;
+      }
+      
+      /* 按钮大小 */
+      .px-8.py-4 {
+        padding-left: 24px;
+        padding-right: 24px;
+        padding-top: 12px;
+        padding-bottom: 12px;
       }
     }
 
@@ -469,40 +511,40 @@
     <!-- Glow orbs -->
     <div class="glow-orb w-[400px] h-[400px] -top-20 -left-20" style="animation: pulse 5s ease-in-out infinite;"></div>
 
-    <div class="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-12">
-      <div class="grid grid-cols-12 gap-8 items-center">
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12">
+      <div class="grid grid-cols-12 gap-4 md:gap-8 items-center">
         <div class="col-span-12 lg:col-span-7">
           <!-- Logo + Brand -->
           <div class="reveal" style="transition-delay: 0.1s;">
             <!-- Logo Graphic + Text -->
-            <div class="relative mb-6 -ml-6">
-              <div class="absolute -inset-6 bg-primary/15 blur-3xl rounded-full opacity-40"></div>
-              <img src="logo-full.webp" alt="BlankStudio Logo" class="relative w-auto h-32 md:h-40 lg:h-48 object-contain" style="mix-blend-mode: screen; filter: contrast(1.2) brightness(1.1);"/>
+            <div class="relative mb-4 md:mb-6 ml-0 md:-ml-6">
+              <div class="absolute -inset-4 md:-inset-6 bg-primary/15 blur-2xl md:blur-3xl rounded-full opacity-40"></div>
+              <img src="logo-full.webp" alt="BlankStudio Logo" class="relative w-auto h-24 md:h-32 lg:h-40 object-contain" style="mix-blend-mode: screen; filter: contrast(1.2) brightness(1.1);"/>
             </div>
           </div>
 
           <!-- Slogan -->
-          <div class="reveal mb-12" style="transition-delay: 0.4s;">
-            <div class="w-12 h-px bg-primary mb-8"></div>
-            <p class="text-2xl md:text-3xl font-light mb-2">让想法产生影响力</p>
-            <p class="text-sm md:text-base text-zinc-500 tracking-widest uppercase">LET IDEAS MAKE AN IMPACT</p>
+          <div class="reveal mb-8 md:mb-12" style="transition-delay: 0.4s;">
+            <div class="w-12 h-px bg-primary mb-6 md:mb-8"></div>
+            <p class="text-xl md:text-2xl lg:text-3xl font-light mb-2">让想法产生影响力</p>
+            <p class="text-xs md:text-sm text-zinc-500 tracking-widest uppercase">LET IDEAS MAKE AN IMPACT</p>
           </div>
 
           <!-- Services List -->
-          <div class="reveal space-y-5 mb-16" style="transition-delay: 0.6s;">
-            <a href="#services" class="service-item block text-sm text-zinc-400 hover:text-white cursor-pointer pl-10 transition-all duration-300">UI / UX DESIGN</a>
-            <a href="#services" class="service-item block text-sm text-zinc-400 hover:text-white cursor-pointer pl-10 transition-all duration-300">WEB DESIGN</a>
-            <a href="#services" class="service-item block text-sm text-zinc-400 hover:text-white cursor-pointer pl-10 transition-all duration-300">PPT DESIGN</a>
-            <a href="#services" class="service-item block text-sm text-zinc-400 hover:text-white cursor-pointer pl-10 transition-all duration-300">BRAND DESIGN</a>
+          <div class="reveal space-y-3 md:space-y-5 mb-12 md:mb-16" style="transition-delay: 0.6s;">
+            <a href="#services" class="service-item block text-xs md:text-sm text-zinc-400 hover:text-white cursor-pointer pl-6 md:pl-10 transition-all duration-300">UI / UX DESIGN</a>
+            <a href="#services" class="service-item block text-xs md:text-sm text-zinc-400 hover:text-white cursor-pointer pl-6 md:pl-10 transition-all duration-300">WEB DESIGN</a>
+            <a href="#services" class="service-item block text-xs md:text-sm text-zinc-400 hover:text-white cursor-pointer pl-6 md:pl-10 transition-all duration-300">PPT DESIGN</a>
+            <a href="#services" class="service-item block text-xs md:text-sm text-zinc-400 hover:text-white cursor-pointer pl-6 md:pl-10 transition-all duration-300">BRAND DESIGN</a>
           </div>
 
           <!-- Bottom tags -->
           <div class="reveal" style="transition-delay: 0.8s;">
-            <div class="w-12 h-px bg-zinc-700 mb-6"></div>
-            <div class="flex flex-col gap-2">
-              <span class="text-xs text-zinc-600 tracking-[0.3em] uppercase">Professional</span>
-              <span class="text-xs text-zinc-600 tracking-[0.3em] uppercase">Minimal</span>
-              <span class="text-xs text-zinc-600 tracking-[0.3em] uppercase">Impactful</span>
+            <div class="w-12 h-px bg-zinc-700 mb-4 md:mb-6"></div>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 md:flex-col md:gap-2">
+              <span class="text-xs text-zinc-600 tracking-[0.2em] md:tracking-[0.3em] uppercase">Professional</span>
+              <span class="text-xs text-zinc-600 tracking-[0.2em] md:tracking-[0.3em] uppercase">Minimal</span>
+              <span class="text-xs text-zinc-600 tracking-[0.2em] md:tracking-[0.3em] uppercase">Impactful</span>
             </div>
           </div>
         </div>
@@ -519,9 +561,9 @@
     </div>
 
     <!-- Scroll indicator -->
-    <div class="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4">
-      <span class="text-[10px] text-zinc-600 tracking-[0.4em] uppercase">SCROLL</span>
-      <div class="w-px h-16 bg-gradient-to-b from-zinc-600 to-transparent"></div>
+    <div class="absolute bottom-8 md:bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 md:gap-4">
+      <span class="text-[10px] text-zinc-600 tracking-[0.3em] md:tracking-[0.4em] uppercase">SCROLL</span>
+      <div class="w-px h-12 md:h-16 bg-gradient-to-b from-zinc-600 to-transparent"></div>
     </div>
   </section>
 
