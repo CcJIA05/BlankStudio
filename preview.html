@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>刘嘉怡作品集</title>
   <meta name="description" content="刘嘉怡 - UI/UX设计师作品集。让想法产生影响力。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -256,7 +256,7 @@
       transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .project-card:hover {
+    .project-card:hover, .project-card.active {
       transform: translateY(-6px);
     }
 
@@ -264,7 +264,7 @@
       transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .project-card:hover .card-img {
+    .project-card:hover .card-img, .project-card.active .card-img {
       transform: scale(1.05);
     }
 
@@ -276,7 +276,7 @@
       transition: opacity 0.5s ease;
     }
 
-    .project-card:hover .card-overlay {
+    .project-card:hover .card-overlay, .project-card.active .card-overlay {
       opacity: 1;
     }
 
@@ -291,9 +291,25 @@
       transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .project-card:hover .card-info {
+    .project-card:hover .card-info, .project-card.active .card-info {
       transform: translateY(0);
       opacity: 1;
+    }
+
+    /* 触摸反馈效果 */
+    .touch-feedback {
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    
+    .touch-feedback:active {
+      transform: scale(0.95);
+      opacity: 0.8;
+    }
+
+    /* Service item触摸效果 */
+    .service-item:active {
+      transform: translateX(8px);
+      color: #7C5CFC;
     }
 
     /* Nav */
@@ -417,26 +433,34 @@
         opacity: 0.5;
       }
       
-      /* 布局比例调整 */
+      /* 布局比例调整 - 保持和电脑端一致 */
+      body {
+        font-size: 16px;
+      }
+      
       .relative.mb-4.md\:mb-6.ml-0.md\:-ml-6 {
         margin-left: 0;
       }
       
-      /* 导航栏紧凑 */
+      /* 导航栏紧凑但保持比例 */
       nav {
         padding-top: 16px;
         padding-bottom: 16px;
       }
       
-      /* 作品卡片间距 */
+      /* 作品卡片间距 - 保持视觉比例 */
       .md\:mt-16 {
         margin-top: 24px;
       }
       
-      /* 标题大小 */
-      .text-4xl, .text-5xl, .text-6xl {
-        font-size: 32px;
-        line-height: 1.2;
+      /* 标题大小 - 按比例缩放 */
+      .text-4xl { font-size: 32px; line-height: 1.2; }
+      .text-5xl { font-size: 40px; line-height: 1.1; }
+      .text-6xl { font-size: 48px; line-height: 1.1; }
+      
+      /* Hero区域标题比例 */
+      h2.text-4xl.md\:text-5xl.lg\:text-6xl {
+        font-size: 36px;
       }
       
       /* 按钮大小 */
@@ -445,6 +469,70 @@
         padding-right: 24px;
         padding-top: 12px;
         padding-bottom: 12px;
+      }
+      
+      /* 项目卡片触摸效果 */
+      .project-card {
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+      }
+      
+      .project-card:active {
+        transform: translateY(-6px) scale(0.98);
+      }
+      
+      /* 触摸涟漪效果 */
+      .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(124, 92, 252, 0.3);
+        transform: scale(0);
+        animation: ripple 0.6s ease-out;
+        pointer-events: none;
+      }
+      
+      @keyframes ripple {
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+      
+      /* 滑动手势提示 */
+      .swipe-indicator {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+        z-index: 100;
+      }
+      
+      .swipe-indicator.show {
+        opacity: 1;
+      }
+      
+      /* Section间距比例保持 */
+      .py-32 {
+        padding-top: 80px;
+        padding-bottom: 80px;
+      }
+      
+      .md\:py-40, .py-40 {
+        padding-top: 100px;
+        padding-bottom: 100px;
+      }
+      
+      /* Grid间距 */
+      .gap-8 {
+        gap: 16px;
+      }
+      
+      .md\:gap-16 {
+        gap: 32px;
       }
     }
 
@@ -1194,6 +1282,189 @@
       document.addEventListener('DOMContentLoaded', processLogoImages);
     } else {
       processLogoImages();
+    }
+
+    // ========== 移动端触摸交互特效 ==========
+    const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    if (isMobileDevice) {
+      // 1. 触摸涟漪效果
+      function createRipple(event, element) {
+        const ripple = document.createElement('div');
+        ripple.classList.add('ripple');
+        
+        const rect = element.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = event.clientX || event.touches[0].clientX - rect.left - size / 2;
+        const y = event.clientY || event.touches[0].clientY - rect.top - size / 2;
+        
+        ripple.style.width = ripple.style.height = `${size}px`;
+        ripple.style.left = `${x}px`;
+        ripple.style.top = `${y}px`;
+        
+        element.appendChild(ripple);
+        
+        setTimeout(() => ripple.remove(), 600);
+      }
+
+      // 为按钮添加涟漪效果
+      document.querySelectorAll('button, a, .project-card').forEach(el => {
+        el.addEventListener('touchstart', (e) => {
+          createRipple(e, el);
+        }, { passive: true });
+      });
+
+      // 2. 项目卡片触摸交互
+      const projectCards = document.querySelectorAll('.project-card');
+      
+      projectCards.forEach(card => {
+        let touchStartTime = 0;
+        let isTouchActive = false;
+        
+        card.addEventListener('touchstart', (e) => {
+          touchStartTime = Date.now();
+          isTouchActive = true;
+          card.classList.add('active');
+          
+          // 防止触摸穿透
+          e.preventDefault();
+        }, { passive: false });
+        
+        card.addEventListener('touchend', (e) => {
+          const touchDuration = Date.now() - touchStartTime;
+          
+          // 短按显示详情，长按视为点击
+          if (touchDuration < 300) {
+            // 短按：显示详情效果
+            card.classList.add('active');
+            setTimeout(() => {
+              card.classList.remove('active');
+            }, 800);
+          } else {
+            // 长按：视为正常点击
+            card.classList.remove('active');
+          }
+          
+          isTouchActive = false;
+        });
+        
+        card.addEventListener('touchmove', () => {
+          if (isTouchActive) {
+            card.classList.remove('active');
+            isTouchActive = false;
+          }
+        });
+      });
+
+      // 3. 服务项触摸滑动效果
+      const serviceItems = document.querySelectorAll('.service-item');
+      
+      serviceItems.forEach(item => {
+        item.addEventListener('touchstart', () => {
+          item.style.transform = 'translateX(8px)';
+          item.style.color = '#7C5CFC';
+        });
+        
+        item.addEventListener('touchend', () => {
+          setTimeout(() => {
+            item.style.transform = '';
+            item.style.color = '';
+          }, 300);
+        });
+      });
+
+      // 4. 手势滑动特效
+      let touchStartY = 0;
+      let touchEndY = 0;
+      let scrollVelocity = 0;
+      let lastScrollTop = 0;
+      let scrollTimestamp = 0;
+
+      // 创建滑动指示器
+      const swipeIndicator = document.createElement('div');
+      swipeIndicator.classList.add('swipe-indicator');
+      swipeIndicator.innerHTML = `
+        <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.5);">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+          </svg>
+          <span style="font-size: 12px;">滑动浏览</span>
+        </div>
+      `;
+      document.body.appendChild(swipeIndicator);
+
+      // 监听触摸滑动
+      document.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+        lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        scrollTimestamp = Date.now();
+      }, { passive: true });
+
+      document.addEventListener('touchend', (e) => {
+        touchEndY = e.changedTouches[0].clientY;
+        const touchDiff = touchStartY - touchEndY;
+        const timeDiff = Date.now() - scrollTimestamp;
+        
+        // 计算滑动速度
+        scrollVelocity = Math.abs(touchDiff) / timeDiff;
+        
+        // 快速滑动时显示指示器
+        if (scrollVelocity > 0.5 && Math.abs(touchDiff) > 50) {
+          swipeIndicator.classList.add('show');
+          setTimeout(() => {
+            swipeIndicator.classList.remove('show');
+          }, 1000);
+        }
+      }, { passive: true });
+
+      // 5. 平滑滚动增强
+      document.addEventListener('touchmove', (e) => {
+        const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollDiff = currentScrollTop - lastScrollTop;
+        
+        // 添加滚动视差效果
+        const heroSection = document.querySelector('section.min-h-screen');
+        if (heroSection && currentScrollTop < window.innerHeight) {
+          const parallaxOffset = currentScrollTop * 0.3;
+          heroSection.style.transform = `translateY(${parallaxOffset}px)`;
+        }
+      }, { passive: true });
+
+      // 6. 触摸反馈振动（如果设备支持）
+      const buttons = document.querySelectorAll('button, a.btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('touchstart', () => {
+          if (navigator.vibrate) {
+            navigator.vibrate(10); // 轻微振动反馈
+          }
+        }, { passive: true });
+      });
+
+      // 7. 优化移动端滚动触发动画
+      window.addEventListener('scroll', () => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollDirection = scrollTop > lastScrollTop ? 'down' : 'up';
+        
+        // 向下滚动时，提前触发reveal动画
+        if (scrollDirection === 'down') {
+          document.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight * 1.2) {
+              el.classList.add('is-visible');
+            }
+          });
+        }
+        
+        lastScrollTop = scrollTop;
+      }, { passive: true });
+
+      // 8. 移除Hero区域的transform（避免影响布局）
+      setTimeout(() => {
+        const heroSection = document.querySelector('section.min-h-screen');
+        if (heroSection) {
+          heroSection.style.transform = '';
+        }
+      }, 1000);
     }
   </script>
 </body>
