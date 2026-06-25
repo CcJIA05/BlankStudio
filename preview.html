@@ -411,8 +411,26 @@
 
     @media (max-width: 768px) {
       .cursor-ring, .cursor-dot { display: none; }
-      .beam { right: 20%; opacity: 0.6; }
-      .beam-glow { right: 10%; opacity: 0.4; }
+      
+      /* 允许横向滚动，保持和电脑端一致的布局比例 */
+      html {
+        overflow-x: auto;
+      }
+      
+      body {
+        overflow-x: auto;
+        min-width: 1280px;
+      }
+      
+      /* 所有fixed定位的元素也保持最小宽度 */
+      nav, .grain, footer {
+        min-width: 1280px;
+      }
+      
+      /* Beam和glow效果也保持宽度 */
+      .beam-container, .glow-orb {
+        min-width: 1280px;
+      }
       
       /* 动画效果和电脑端完全一致 */
       .reveal, .reveal-left, .reveal-right {
@@ -431,44 +449,6 @@
       .glow-orb {
         animation: pulse 5s ease-in-out infinite;
         opacity: 0.5;
-      }
-      
-      /* 布局比例调整 - 保持和电脑端一致 */
-      body {
-        font-size: 16px;
-      }
-      
-      .relative.mb-4.md\:mb-6.ml-0.md\:-ml-6 {
-        margin-left: 0;
-      }
-      
-      /* 导航栏紧凑但保持比例 */
-      nav {
-        padding-top: 16px;
-        padding-bottom: 16px;
-      }
-      
-      /* 作品卡片间距 - 保持视觉比例 */
-      .md\:mt-16 {
-        margin-top: 24px;
-      }
-      
-      /* 标题大小 - 按比例缩放 */
-      .text-4xl { font-size: 32px; line-height: 1.2; }
-      .text-5xl { font-size: 40px; line-height: 1.1; }
-      .text-6xl { font-size: 48px; line-height: 1.1; }
-      
-      /* Hero区域标题比例 */
-      h2.text-4xl.md\:text-5xl.lg\:text-6xl {
-        font-size: 36px;
-      }
-      
-      /* 按钮大小 */
-      .px-8.py-4 {
-        padding-left: 24px;
-        padding-right: 24px;
-        padding-top: 12px;
-        padding-bottom: 12px;
       }
       
       /* 项目卡片触摸效果 */
@@ -497,7 +477,7 @@
         }
       }
       
-      /* 滑动手势提示 */
+      /* 横向滚动提示 */
       .swipe-indicator {
         position: fixed;
         bottom: 0;
@@ -509,30 +489,30 @@
         transition: opacity 0.3s ease;
         pointer-events: none;
         z-index: 100;
+        min-width: 1280px;
       }
       
       .swipe-indicator.show {
         opacity: 1;
       }
       
-      /* Section间距比例保持 */
-      .py-32 {
-        padding-top: 80px;
-        padding-bottom: 80px;
+      /* 横向滚动条样式 */
+      ::-webkit-scrollbar:horizontal {
+        height: 6px;
       }
       
-      .md\:py-40, .py-40 {
-        padding-top: 100px;
-        padding-bottom: 100px;
+      ::-webkit-scrollbar-track:horizontal {
+        background: #000;
       }
       
-      /* Grid间距 */
-      .gap-8 {
-        gap: 16px;
+      ::-webkit-scrollbar-thumb:horizontal {
+        background: linear-gradient(90deg, #7C5CFC 0%, #5B3DF0 100%);
+        border-radius: 3px;
       }
       
-      .md\:gap-16 {
-        gap: 32px;
+      /* 隐藏移动端默认的弹性滚动效果 */
+      body {
+        -webkit-overflow-scrolling: touch;
       }
     }
 
@@ -1384,32 +1364,56 @@
       const swipeIndicator = document.createElement('div');
       swipeIndicator.classList.add('swipe-indicator');
       swipeIndicator.innerHTML = `
-        <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.5);">
+        <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.6); white-space: nowrap;">
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
           </svg>
-          <span style="font-size: 12px;">滑动浏览</span>
+          <span style="font-size: 12px; letter-spacing: 0.1em;">左右滑动查看完整内容</span>
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
         </div>
       `;
       document.body.appendChild(swipeIndicator);
 
-      // 监听触摸滑动
+      // 页面加载时显示横向滑动提示
+      setTimeout(() => {
+        swipeIndicator.classList.add('show');
+        setTimeout(() => {
+          swipeIndicator.classList.remove('show');
+        }, 3000);
+      }, 1000);
+
+      // 监听横向滑动
+      let touchStartX = 0;
+      
       document.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
         scrollTimestamp = Date.now();
       }, { passive: true });
 
       document.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].clientX;
         touchEndY = e.changedTouches[0].clientY;
-        const touchDiff = touchStartY - touchEndY;
+        const touchDiffX = touchStartX - touchEndX;
+        const touchDiffY = touchStartY - touchEndY;
         const timeDiff = Date.now() - scrollTimestamp;
         
-        // 计算滑动速度
-        scrollVelocity = Math.abs(touchDiff) / timeDiff;
+        // 横向滑动提示
+        if (Math.abs(touchDiffX) > 50 && Math.abs(touchDiffX) > Math.abs(touchDiffY)) {
+          swipeIndicator.classList.add('show');
+          setTimeout(() => {
+            swipeIndicator.classList.remove('show');
+          }, 1500);
+        }
         
-        // 快速滑动时显示指示器
-        if (scrollVelocity > 0.5 && Math.abs(touchDiff) > 50) {
+        // 计算纵向滑动速度
+        scrollVelocity = Math.abs(touchDiffY) / timeDiff;
+        
+        // 快速纵向滑动时显示指示器
+        if (scrollVelocity > 0.5 && Math.abs(touchDiffY) > 50) {
           swipeIndicator.classList.add('show');
           setTimeout(() => {
             swipeIndicator.classList.remove('show');
