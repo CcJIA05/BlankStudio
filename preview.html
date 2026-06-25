@@ -397,6 +397,21 @@
       .cursor-ring, .cursor-dot { display: none; }
       .beam { right: 20%; }
       .beam-glow { right: 10%; }
+      /* 确保移动端动画正常工作 */
+      .reveal, .reveal-left, .reveal-right {
+        transition-duration: 0.8s;
+      }
+      .glow-orb {
+        animation: pulse 4s ease-in-out infinite;
+      }
+    }
+
+    /* 强制启用动画（移动设备优化） */
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal, .reveal-left, .reveal-right {
+        transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
     }
   </style>
 </head>
@@ -1077,14 +1092,18 @@
       }
     });
 
-    // Reveal animations
+    // Reveal animations - 移动端优化
+    const isMobile = window.innerWidth <= 768;
     const revealObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('is-visible');
         }
       });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    }, {
+      threshold: isMobile ? 0.05 : 0.1,
+      rootMargin: isMobile ? '0px 0px 0px 0px' : '0px 0px -50px 0px'
+    });
 
     document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => {
       revealObserver.observe(el);
