@@ -1,11 +1,107 @@
+import { useState, useCallback, useEffect, useRef } from "react";
 import Hero from '@/components/Hero/Hero';
 import PortfolioCard from '@/components/PortfolioCard/PortfolioCard';
+import AdminToggle from "@/components/AdminToggle/AdminToggle";
+
 import { projects } from '@/data/projects';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+
+const STORAGE_KEY = "blankstudio_home";
+
+interface HomeData {
+  about: {
+    title: string;
+    subtitle: string;
+    description1: string;
+    description2: string;
+    stats: { value: string; label: string }[];
+  };
+  services: {
+    title: string;
+    items: {
+      icon: string;
+      title: string;
+      description: string;
+      features: string[];
+    }[];
+  };
+  contact: {
+    title: string;
+    description: string;
+    email: string;
+    location: string;
+    hours: string;
+  };
+}
+
+const defaultData: HomeData = {
+  about: {
+    title: "关于我们",
+    subtitle: "ABOUT US",
+    description1: "BlankStudio 是一家专注于数字产品体验设计的创意工作室。我们相信好的设计能够让想法产生真正的影响力。",
+    description2: "从品牌视觉到产品界面，从PPT演示到网站设计，我们用专业的设计能力，帮助科技企业打造具有影响力的视觉表达。",
+    stats: [
+      { value: "50+", label: "Projects" },
+      { value: "30+", label: "Clients" },
+      { value: "3", label: "Years" },
+    ],
+  },
+  services: {
+    title: "我们的服务",
+    items: [
+      {
+        icon: "ui",
+        title: "UI / UX 设计",
+        description: "以用户为中心的界面设计，打造极致的用户体验。",
+        features: ["移动端App设计", "Web端界面设计", "用户体验优化", "交互原型设计"],
+      },
+      {
+        icon: "web",
+        title: "网站设计",
+        description: "高端企业官网与产品网站，塑造品牌形象。",
+        features: ["企业官网设计", "产品网站设计", "活动专题页设计", "响应式适配"],
+      },
+      {
+        icon: "ppt",
+        title: "PPT 设计",
+        description: "专业演示文稿设计，让演讲更有说服力。",
+        features: ["企业融资PPT", "产品发布PPT", "工作汇报PPT", "品牌宣讲PPT"],
+      },
+      {
+        icon: "brand",
+        title: "品牌设计",
+        description: "完整品牌视觉系统，建立独特品牌识别。",
+        features: ["Logo设计", "VI视觉系统", "品牌手册", "物料设计"],
+      },
+    ],
+  },
+  contact: {
+    title: "联系我们",
+    description: "有项目想法？让我们一起让它产生影响力。",
+    email: "hello@blankstudio.cn",
+    location: "广东 · 深圳",
+    hours: "周一 - 周五, 9:00 - 18:00",
+  },
+};
+
+function loadData(): HomeData {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return JSON.parse(JSON.stringify(defaultData));
+}
+
+function restoreDefault(): HomeData {
+  localStorage.removeItem(STORAGE_KEY);
+  return JSON.parse(JSON.stringify(defaultData));
+}
 
 export default function HomePage() {
+  const [data, setData] = useState<HomeData>(loadData);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<HomeData | null>(null);
   const featuredProjects = projects.slice(0, 4);
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -31,8 +127,78 @@ export default function HomePage() {
     return () => observer.disconnect();
   }, []);
 
+  const handleEditModeChange = useCallback((isEditingMode: boolean) => {
+    if (isEditingMode) {
+      setDraft(JSON.parse(JSON.stringify(data)));
+      setEditing(true);
+    } else {
+      setDraft(null);
+      setEditing(false);
+    }
+  }, [data]);
+
+  const handleSave = useCallback(() => {
+    if (!draft) return;
+    setData(draft);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    setDraft(null);
+    setEditing(false);
+  }, [draft]);
+
+  const handleRestore = useCallback(() => {
+    const original = restoreDefault();
+    setData(original);
+    setDraft(original);
+  }, []);
+
+  const current = editing && draft ? draft : data;
+
+  const updateAbout = (field: string, value: string) => {
+    if (!draft) return;
+    setDraft({ ...draft, about: { ...draft.about, [field]: value } });
+  };
+
+  const updateAboutStat = (index: number, field: string, value: string) => {
+    if (!draft) return;
+    const stats = [...draft.about.stats];
+    stats[index] = { ...stats[index], [field]: value };
+    setDraft({ ...draft, about: { ...draft.about, stats } });
+  };
+
+  const updateServiceItem = (index: number, field: string, value: string | string[]) => {
+    if (!draft) return;
+    const items = [...draft.services.items];
+    items[index] = { ...items[index], [field]: value };
+    setDraft({ ...draft, services: { ...draft.services, items } });
+  };
+
+  const updateServiceFeature = (serviceIndex: number, featureIndex: number, value: string) => {
+    if (!draft) return;
+    const items = [...draft.services.items];
+    const features = [...items[serviceIndex].features];
+    features[featureIndex] = value;
+    items[serviceIndex] = { ...items[serviceIndex], features };
+    setDraft({ ...draft, services: { ...draft.services, items } });
+  };
+
+  const updateContact = (field: string, value: string) => {
+    if (!draft) return;
+    setDraft({ ...draft, contact: { ...draft.contact, [field]: value } });
+  };
+
+  const renderIcon = (iconName: string) => {
+    const icons: Record<string, string> = {
+      ui: '<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />',
+      web: '<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />',
+      ppt: '<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />',
+      brand: '<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />',
+    };
+    return icons[iconName] || icons.ui;
+  };
+
   return (
     <div ref={pageRef} className="min-h-screen bg-black">
+      <AdminToggle isEditing={editing} onEditModeChange={handleEditModeChange} />
       <Hero />
 
       <section className="py-12 border-y border-white/5">
@@ -92,28 +258,62 @@ export default function HomePage() {
           <div className="grid grid-cols-12 gap-12 md:gap-16">
             <div className="col-span-12 lg:col-span-5">
               <div className="reveal-left lg:sticky lg:top-32">
-                <span className="tag-pill text-xs text-zinc-500 tracking-[0.3em] uppercase mb-6">ABOUT US</span>
-                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-8">关于我们</h2>
+                <span className="tag-pill text-xs text-zinc-500 tracking-[0.3em] uppercase mb-6">{current.about.subtitle}</span>
+                {editing ? (
+                  <input
+                    value={current.about.title}
+                    onChange={(e) => updateAbout("title", e.target.value)}
+                    className="text-4xl md:text-5xl font-bold tracking-tight mb-8 w-full bg-transparent border-b border-primary/30 focus:outline-none text-white"
+                  />
+                ) : (
+                  <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-8">{current.about.title}</h2>
+                )}
                 <div className="w-16 h-px bg-primary mb-8"></div>
-                <p className="text-zinc-400 text-base leading-relaxed mb-6">
-                  BlankStudio 是一家专注于数字产品体验设计的创意工作室。我们相信好的设计能够让想法产生真正的影响力。
-                </p>
-                <p className="text-zinc-500 text-base leading-relaxed mb-10">
-                  从品牌视觉到产品界面，从PPT演示到网站设计，我们用专业的设计能力，帮助科技企业打造具有影响力的视觉表达。
-                </p>
+                {editing ? (
+                  <>
+                    <textarea
+                      value={current.about.description1}
+                      onChange={(e) => updateAbout("description1", e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 mb-6 bg-zinc-900/50 border border-primary/20 rounded-xl text-gray-400 text-sm focus:outline-none focus:border-primary/50 resize-none"
+                    />
+                    <textarea
+                      value={current.about.description2}
+                      onChange={(e) => updateAbout("description2", e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 mb-10 bg-zinc-900/50 border border-primary/20 rounded-xl text-gray-400 text-sm focus:outline-none focus:border-primary/50 resize-none"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <p className="text-zinc-400 text-base leading-relaxed mb-6">{current.about.description1}</p>
+                    <p className="text-zinc-500 text-base leading-relaxed mb-10">{current.about.description2}</p>
+                  </>
+                )}
                 <div className="grid grid-cols-3 gap-8">
-                  <div>
-                    <div className="text-4xl font-bold number-display mb-2">50+</div>
-                    <div className="text-xs text-zinc-600 tracking-widest uppercase">Projects</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-bold number-display mb-2">30+</div>
-                    <div className="text-xs text-zinc-600 tracking-widest uppercase">Clients</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-bold number-display mb-2">3</div>
-                    <div className="text-xs text-zinc-600 tracking-widest uppercase">Years</div>
-                  </div>
+                  {current.about.stats.map((stat, i) => (
+                    <div key={i}>
+                      {editing ? (
+                        <div className="space-y-2">
+                          <input
+                            value={stat.value}
+                            onChange={(e) => updateAboutStat(i, "value", e.target.value)}
+                            className="w-full text-4xl font-bold number-display bg-transparent border-b border-primary/30 focus:outline-none text-white"
+                          />
+                          <input
+                            value={stat.label}
+                            onChange={(e) => updateAboutStat(i, "label", e.target.value)}
+                            className="w-full text-xs text-zinc-600 tracking-widest uppercase bg-transparent border-b border-primary/20 focus:outline-none"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-4xl font-bold number-display mb-2">{stat.value}</div>
+                          <div className="text-xs text-zinc-600 tracking-widest uppercase">{stat.label}</div>
+                        </>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -230,85 +430,68 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="reveal text-center mb-20">
             <span className="tag-pill text-xs text-zinc-500 tracking-[0.3em] uppercase mb-6">OUR SERVICES</span>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">我们的服务</h2>
+            {editing ? (
+              <input
+                value={current.services.title}
+                onChange={(e) => updateServiceItem(-1, "title", e.target.value)}
+                className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight w-full bg-transparent border-b border-primary/30 focus:outline-none text-white text-center"
+              />
+            ) : (
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">{current.services.title}</h2>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-800/30 rounded-3xl overflow-hidden border border-white/5">
-            <div className="reveal p-10 bg-black group hover:bg-zinc-900/80 transition-all duration-700" style={{ transitionDelay: '0.1s' }}>
-              <div className="w-14 h-14 mb-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl"></div>
-                <div className="absolute inset-0 border border-white/10 rounded-2xl flex items-center justify-center group-hover:border-primary/30 transition-colors">
-                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                  </svg>
+            {current.services.items.map((service, index) => (
+              <div
+                key={index}
+                className="reveal p-10 bg-black group hover:bg-zinc-900/80 transition-all duration-700"
+                style={{ transitionDelay: `${index * 0.1}s` }}
+              >
+                <div className="w-14 h-14 mb-8 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl"></div>
+                  <div className="absolute inset-0 border border-white/10 rounded-2xl flex items-center justify-center group-hover:border-primary/30 transition-colors">
+                    <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: renderIcon(service.icon) }} />
+                  </div>
                 </div>
+                {editing ? (
+                  <>
+                    <input
+                      value={service.title}
+                      onChange={(e) => updateServiceItem(index, "title", e.target.value)}
+                      className="w-full text-xl font-semibold mb-3 bg-transparent border-b border-primary/20 focus:outline-none text-white"
+                    />
+                    <textarea
+                      value={service.description}
+                      onChange={(e) => updateServiceItem(index, "description", e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 mb-6 bg-zinc-900/50 border border-primary/20 rounded-xl text-gray-500 text-sm focus:outline-none focus:border-primary/50 resize-none"
+                    />
+                    <ul className="space-y-2 text-sm text-zinc-400">
+                      {service.features.map((feature, fi) => (
+                        <li key={fi}>
+                          <input
+                            value={feature}
+                            onChange={(e) => updateServiceFeature(index, fi, e.target.value)}
+                            className="w-full bg-transparent border-b border-primary/10 focus:outline-none text-sm"
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-xl font-semibold mb-3">{service.title}</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed mb-6">{service.description}</p>
+                    <ul className="space-y-2 text-sm text-zinc-400">
+                      {service.features.map((feature, fi) => (
+                        <li key={fi}>• {feature}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </div>
-              <h3 className="text-xl font-semibold mb-3">UI / UX 设计</h3>
-              <p className="text-zinc-500 text-sm leading-relaxed mb-6">以用户为中心的界面设计，打造极致的用户体验。</p>
-              <ul className="space-y-2 text-sm text-zinc-400">
-                <li>• 移动端App设计</li>
-                <li>• Web端界面设计</li>
-                <li>• 用户体验优化</li>
-                <li>• 交互原型设计</li>
-              </ul>
-            </div>
-
-            <div className="reveal p-10 bg-black group hover:bg-zinc-900/80 transition-all duration-700" style={{ transitionDelay: '0.2s' }}>
-              <div className="w-14 h-14 mb-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl"></div>
-                <div className="absolute inset-0 border border-white/10 rounded-2xl flex items-center justify-center group-hover:border-primary/30 transition-colors">
-                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">网站设计</h3>
-              <p className="text-zinc-500 text-sm leading-relaxed mb-6">高端企业官网与产品网站，塑造品牌形象。</p>
-              <ul className="space-y-2 text-sm text-zinc-400">
-                <li>• 企业官网设计</li>
-                <li>• 产品网站设计</li>
-                <li>• 活动专题页设计</li>
-                <li>• 响应式适配</li>
-              </ul>
-            </div>
-
-            <div className="reveal p-10 bg-black group hover:bg-zinc-900/80 transition-all duration-700" style={{ transitionDelay: '0.3s' }}>
-              <div className="w-14 h-14 mb-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl"></div>
-                <div className="absolute inset-0 border border-white/10 rounded-2xl flex items-center justify-center group-hover:border-primary/30 transition-colors">
-                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">PPT 设计</h3>
-              <p className="text-zinc-500 text-sm leading-relaxed mb-6">专业演示文稿设计，让演讲更有说服力。</p>
-              <ul className="space-y-2 text-sm text-zinc-400">
-                <li>• 企业融资PPT</li>
-                <li>• 产品发布PPT</li>
-                <li>• 工作汇报PPT</li>
-                <li>• 品牌宣讲PPT</li>
-              </ul>
-            </div>
-
-            <div className="reveal p-10 bg-black group hover:bg-zinc-900/80 transition-all duration-700" style={{ transitionDelay: '0.4s' }}>
-              <div className="w-14 h-14 mb-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl"></div>
-                <div className="absolute inset-0 border border-white/10 rounded-2xl flex items-center justify-center group-hover:border-primary/30 transition-colors">
-                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">品牌设计</h3>
-              <p className="text-zinc-500 text-sm leading-relaxed mb-6">完整品牌视觉系统，建立独特品牌识别。</p>
-              <ul className="space-y-2 text-sm text-zinc-400">
-                <li>• Logo设计</li>
-                <li>• VI视觉系统</li>
-                <li>• 品牌手册</li>
-                <li>• 物料设计</li>
-              </ul>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -319,11 +502,26 @@ export default function HomePage() {
             <div className="col-span-12 lg:col-span-5">
               <div className="reveal-left">
                 <span className="tag-pill text-xs text-zinc-500 tracking-[0.3em] uppercase mb-6">CONTACT</span>
-                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">联系我们</h2>
+                {editing ? (
+                  <input
+                    value={current.contact.title}
+                    onChange={(e) => updateContact("title", e.target.value)}
+                    className="text-4xl md:text-5xl font-bold tracking-tight mb-6 w-full bg-transparent border-b border-primary/30 focus:outline-none text-white"
+                  />
+                ) : (
+                  <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">{current.contact.title}</h2>
+                )}
                 <div className="w-16 h-px bg-primary mb-8"></div>
-                <p className="text-zinc-400 text-base leading-relaxed mb-12">
-                  有项目想法？让我们一起让它产生影响力。
-                </p>
+                {editing ? (
+                  <textarea
+                    value={current.contact.description}
+                    onChange={(e) => updateContact("description", e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 mb-12 bg-zinc-900/50 border border-primary/20 rounded-xl text-gray-400 text-sm focus:outline-none focus:border-primary/50 resize-none"
+                  />
+                ) : (
+                  <p className="text-zinc-400 text-base leading-relaxed mb-12">{current.contact.description}</p>
+                )}
 
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
@@ -334,7 +532,15 @@ export default function HomePage() {
                     </div>
                     <div>
                       <div className="text-xs text-zinc-600 uppercase tracking-widest mb-1">Email</div>
-                      <a href="mailto:hello@blankstudio.cn" className="text-sm hover:text-primary transition-colors">hello@blankstudio.cn</a>
+                      {editing ? (
+                        <input
+                          value={current.contact.email}
+                          onChange={(e) => updateContact("email", e.target.value)}
+                          className="w-full text-sm bg-transparent border-b border-primary/20 focus:outline-none hover:text-primary transition-colors"
+                        />
+                      ) : (
+                        <a href={`mailto:${current.contact.email}`} className="text-sm hover:text-primary transition-colors">{current.contact.email}</a>
+                      )}
                     </div>
                   </div>
 
@@ -347,7 +553,15 @@ export default function HomePage() {
                     </div>
                     <div>
                       <div className="text-xs text-zinc-600 uppercase tracking-widest mb-1">Location</div>
-                      <span className="text-sm">广东 · 深圳</span>
+                      {editing ? (
+                        <input
+                          value={current.contact.location}
+                          onChange={(e) => updateContact("location", e.target.value)}
+                          className="w-full text-sm bg-transparent border-b border-primary/20 focus:outline-none"
+                        />
+                      ) : (
+                        <span className="text-sm">{current.contact.location}</span>
+                      )}
                     </div>
                   </div>
 
@@ -359,7 +573,15 @@ export default function HomePage() {
                     </div>
                     <div>
                       <div className="text-xs text-zinc-600 uppercase tracking-widest mb-1">Working Hours</div>
-                      <span className="text-sm">周一 - 周五, 9:00 - 18:00</span>
+                      {editing ? (
+                        <input
+                          value={current.contact.hours}
+                          onChange={(e) => updateContact("hours", e.target.value)}
+                          className="w-full text-sm bg-transparent border-b border-primary/20 focus:outline-none"
+                        />
+                      ) : (
+                        <span className="text-sm">{current.contact.hours}</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -412,6 +634,23 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {editing && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-zinc-900/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-lg">
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary/90 transition-all"
+          >
+            保存修改
+          </button>
+          <button
+            onClick={handleRestore}
+            className="px-4 py-2 border border-amber-500/30 text-amber-400 text-xs rounded-lg hover:bg-amber-500/10 transition-all"
+          >
+            恢复默认
+          </button>
+        </div>
+      )}
     </div>
   );
 }
