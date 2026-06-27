@@ -90,6 +90,7 @@ async function createGist(token: string, content: string): Promise<string> {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
     },
     body: JSON.stringify({
       description: "BlankStudio website data",
@@ -103,7 +104,17 @@ async function createGist(token: string, content: string): Promise<string> {
   });
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`创建Gist失败: HTTP ${response.status} - ${errorText}`);
+    let message = `创建Gist失败: HTTP ${response.status}`;
+    if (response.status === 404) {
+      message = "Token无效或没有gist权限，请检查Token设置";
+    } else if (response.status === 401) {
+      message = "Token认证失败，请检查Token是否正确";
+    } else if (response.status === 403) {
+      message = "Token权限不足，需要gist权限";
+    } else {
+      message += " - " + errorText;
+    }
+    throw new Error(message);
   }
   const data = await response.json();
   return data.id;
