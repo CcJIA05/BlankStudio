@@ -1,6 +1,7 @@
 const GIST_ID_KEY = "blankstudio_gist_id";
 const SYNC_TOKEN_KEY = "blankstudio_sync_token";
 const LAST_SYNC_KEY = "blankstudio_last_sync";
+const DEFAULT_TOKEN = import.meta.env.VITE_GIST_TOKEN || "";
 
 interface SyncData {
   projects?: unknown;
@@ -23,9 +24,9 @@ export async function setGistId(id: string): Promise<void> {
 
 export async function getSyncToken(): Promise<string | null> {
   try {
-    return localStorage.getItem(SYNC_TOKEN_KEY) || null;
+    return localStorage.getItem(SYNC_TOKEN_KEY) || DEFAULT_TOKEN;
   } catch {
-    return null;
+    return DEFAULT_TOKEN;
   }
 }
 
@@ -49,19 +50,24 @@ function setLastSyncTime(): void {
 async function fetchGist(gistId: string, token: string): Promise<any> {
   const response = await fetch(`https://api.github.com/gists/${gistId}`, {
     headers: {
-      Authorization: `token ${token}`,
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
     },
   });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`获取Gist失败: HTTP ${response.status} - ${errorText}`);
+  }
   return response.json();
 }
 
 async function updateGist(gistId: string, token: string, content: string): Promise<void> {
-  await fetch(`https://api.github.com/gists/${gistId}`, {
+  const response = await fetch(`https://api.github.com/gists/${gistId}`, {
     method: "PATCH",
     headers: {
-      Authorization: `token ${token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      Accept: "application/vnd.github+json",
     },
     body: JSON.stringify({
       files: {
@@ -71,14 +77,19 @@ async function updateGist(gistId: string, token: string, content: string): Promi
       },
     }),
   });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`更新Gist失败: HTTP ${response.status} - ${errorText}`);
+  }
 }
 
 async function createGist(token: string, content: string): Promise<string> {
   const response = await fetch("https://api.github.com/gists", {
     method: "POST",
     headers: {
-      Authorization: `token ${token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      Accept: "application/vnd.github+json",
     },
     body: JSON.stringify({
       description: "BlankStudio website data",
@@ -90,7 +101,10 @@ async function createGist(token: string, content: string): Promise<string> {
       },
     }),
   });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`创建Gist失败: HTTP ${response.status} - ${errorText}`);
+  }
   const data = await response.json();
   return data.id;
 }
@@ -116,7 +130,9 @@ export async function pushToCloud(data: SyncData): Promise<{ success: boolean; m
     setLastSyncTime();
     return { success: true, message: "数据已同步到云端" };
   } catch (error) {
-    return { success: false, message: "同步失败，请检查Token是否正确" };
+    console.error("推送失败:", error);
+    const errorMessage = error instanceof Error ? error.message : "同步失败，请检查Token是否正确";
+    return { success: false, message: errorMessage };
   }
 }
 
@@ -143,7 +159,9 @@ export async function pullFromCloud(): Promise<{ success: boolean; data: SyncDat
     setLastSyncTime();
     return { success: true, data, message: "已从云端获取最新数据" };
   } catch (error) {
-    return { success: false, data: null, message: "获取失败，请检查网络和Token" };
+    console.error("拉取失败:", error);
+    const errorMessage = error instanceof Error ? error.message : "获取失败，请检查网络和Token";
+    return { success: false, data: null, message: errorMessage };
   }
 }
 

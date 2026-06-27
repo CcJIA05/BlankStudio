@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      var path = window.location.pathname;
+      if (path.indexOf('/BlankStudio/') === 0) {
+        path = path.substring('/BlankStudio'.length);
+      }
+      window.location.href = '/BlankStudio/index.html#!' + path;
+    </script>
+  </head>
+  <body></body>
+</html>
